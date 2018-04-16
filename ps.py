@@ -10,7 +10,7 @@ def bestaetigen(event):
 
 
 root = Tk()
-root.title("Test")
+root.title("PS")
 root.geometry("1920x1080")
 
 textfeld = Text(master=root)
@@ -23,6 +23,23 @@ textfeld.pack(fill="both")
 root.bind('<Return>', bestaetigen)
 
 root.mainloop()
+
+class infinity:
+	def __init__(self, xexp, yexp):
+		self.__universes = []
+		self.__xexp = 0
+		self.__yexp = 0
+		
+	def addUniverse(self, universe):
+		self.__universes.append(universe)
+		return true
+	
+	def removeUniverse(self, universe):
+		self.__universes.remove(universe)
+		return true
+	
+	def getUniverse(self, i):
+		return universes[i]
 
 class Body:
     def __init__(self, m, r, xpos, ypos):
@@ -93,19 +110,111 @@ class Rules:
 
         return F_G
 
-    def v(self):
- #       v = Body.addForce(((Vector().magnitude()).normalize()))*F_G)
+#    def v(self):
+#        v = Body.addForce(((Vector().magnitude()).normalize()))*gravitation())
 
-        return v
+#        return v
 
     
-#class commands:
-#    def define(self):
-#        def 
-        
-        
-        
+class commands:
+	
+    def define(self):
+		com1 = "universe"
+		com2 = "rules"
+		
+		usrCom = input()
+		
+		if usrCom == com1:
+			ret = universe()
+			return ret
+		
+#		if usrCom == com2:
+#			ret = rules()
+#			return ret
+		
+        def universe(self):
+			print("please insert universe data! (G, maxX, maxY)")
+			inp = input()
+			self.__G = int(inp)
+			inp2 = input()
+			self.__maxX = int(inp2)
+			inp3= input()
+			self.__maxY = int(inp3)
+			
+			return Universe(G, maxX, maxY)
+		
+#		def rules(self, comNumb = 1): 
+			
+	
+	def add(self):
+		com1 = "body"
+		usrCom = input()
+		
+		if usrCom == com1:
+			ret = body()
+			return ret
+		
+		def body(self):
+			print("please insert planet data! (m, r, xpos, ypos)")
+			inp = input()
+			self.__m = int(inp)
+			inp2 = input()
+			self.__r = int(inp2)
+			inp3 = input()
+			self.__xpos = int(inp3)
+			inp4 = input()
+			self.__ypos = int(inp4)
+			
+			return Body(m, r, xpos, ypos)
+	
+    def show(self):
+		com1 = "animation"
+		com2 = "diagram"
+		com3 = "calculator"
+		
+		usrCom = input()
+		
+		if usrCom == com1:
+			ret = animation()
+			return ret
+		
+		if usrCom == com2:
+			ret = diagram()
+			return ret
+		
+		if usrCom == com3:
+			ret = calculator()
+			return ret
+		
+		def animation(self):
+			
+		def diagram(self):
+		
+		def calculator(self):
+			
+    def delete(self):
+		com1 = "universe"
+		com2 = "body"
+		
+		usrCom = input()
+		
+		if usrCom == com1:
+			ret = universe()
+			return ret
+		
+		if usrCom == com2:
+			ret = body()
+			return ret
+		
+		def universe(self):
+			Universe.delBody(0)
+			Infinity.removeUniverse(0)
+			
+		def body(self):
+			
+				
+      
         
     
     
-    
+
