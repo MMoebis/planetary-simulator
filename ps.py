@@ -1,17 +1,71 @@
 from tkinter import *
-import math
+from math import *
 import sys
 
-def bestaetigen(event):
+def getInput():
     text = textfeld.get('1.0', 'end').strip()
-    Compare = str(compare)
-    if text == Compare:
-        textfeld.insert(END, insert)
+    return text
 
+def commands(event):
+    define = "def"
+    adding = "add"
+    defineUniverse = "def universe"
+    addBody = "add body"
+    delete = "del"
+    show = "show"
+    text = getInput()
+    if text == define:
+       defError = "commands missing!\navailable commands: universe\n"
+       textfeld.insert(END, defError)
+
+    if text == adding:
+        addError = "commands missing!\navailable commands: body\n"
+        textfeld.insert(END, addError)
+
+    if text == defineUniverse:
+        defRequest = "Please insert universe data! (G, maxX, maxY)\n"
+        textfeld.insert(END, defRequest)
+        defList = []
+        defG = getInput()
+        defList[0] = defG
+        defMaxX = getInput()
+        defList[1] = defMaxX
+        defMaxY = getInput()
+        defList[2] = defMaxY
+
+        universe = Universe(defList[0], defList[1], defList[2])
+        Infinity.addUniverse(universe)
+
+    if text == addBody:
+        addRequest = "Please insert body data! (m, r, xpos, ypos)\n"
+        textfeld.insert(END, addRequest)
+        addList = []
+        addM = getInput()
+        addList[0] = addM
+        addR = getInput()
+        addList[1] = addR
+        addXpos = getInput()
+        addList[2] = addXpos
+        addYpos = getInput()
+        addList[3] = addYpos
+
+        body = Body(addList[0], addList[1], addList[2], addList[3])
+        Universe.addBody(body)
+
+def test(event):
+    print("test")
 
 root = Tk()
 root.title("PS")
-root.geometry("1920x1080")
+root.geometry("200x200")
+menu = Menu()
+root.config(menu=menu)
+file = Menu(menu)
+#file.add_command(label="Exit", command=self.client_exit)
+menu.add_cascade(label="File", menu=file)
+edit = Menu(menu)
+edit.add_command(label="Undo")
+menu.add_cascade(label="Edit", menu=edit)
 
 textfeld = Text(master=root)
 textfeld.config(wrap='word', width="1920",
@@ -20,26 +74,26 @@ textfeld.config(wrap='word', width="1920",
                 font="Monaco")
 textfeld.pack(fill="both")
 
-root.bind('<Return>', bestaetigen)
+
+root.bind('<Return>', commands)
 
 root.mainloop()
 
-class infinity:
-	def __init__(self, xexp, yexp):
-		self.__universes = []
-		self.__xexp = 0
-		self.__yexp = 0
-		
-	def addUniverse(self, universe):
-		self.__universes.append(universe)
-		return true
-	
-	def removeUniverse(self, universe):
-		self.__universes.remove(universe)
-		return true
-	
-	def getUniverse(self, i):
-		return universes[i]
+
+class Infinity:
+    def __init__(self):
+        self.__universes = []
+
+    def addUniverse(self, universe):
+        self.__universes.append(universe)
+        return True
+
+    def removeUniverse(self, universe):
+        self.__universes.remove(universe)
+        return True
+
+    def getUniverse(self, i):
+        return self.__universes[i]
 
 class Body:
     def __init__(self, m, r, xpos, ypos):
@@ -47,11 +101,12 @@ class Body:
         self.__r = r
         self.__xpos = xpos
         self.__ypos = ypos
-        
+
     def addForce(self, x, y):
         vec = Vector(x, y)
-        
+
         return vec
+
 
 class Universe:
     def __init__(self, G, maxX, maxY):
@@ -59,6 +114,7 @@ class Universe:
         self.__G = G
         self.__maxX = maxX
         self.__maxY = maxY
+
     def addBody(self, body):
         self.__bodys.append(body)
 
@@ -67,6 +123,7 @@ class Universe:
 
     def getBody(self, i):
         return self.__bodys[i]
+
 
 class Vector:
     def __init__(self, x, y):
@@ -77,144 +134,41 @@ class Vector:
         x = self.__x + other.__x
         y = self.__y + other.__y
 
-        return Vector(x,y)
+        return Vector(x, y)
 
     def __sub__(self, other):
         x = self.__x - other.__x
         y = self.__y - other.__y
 
-        return Vector(x,y)
-        
+        return Vector(x, y)
+
     def magnitude(self, other):
         a = self.__x - other.__x
         b = self.__y - other.__y
-        c = sqrt(pow(a, 2)+pow(b, 2))
+        c = sqrt(pow(a, 2) + pow(b, 2))
 
         return c
 
     def normalize(self):
-        d = self.magnitude()
-        Vector(self.__x/d, self.__y/d)
+        d = self.magnitude(self)
+        vd = Vector(self.__x / d, self.__y / d)
 
-        return Vector(x,y)
+        return vd
+
 
 class Rules:
     def __init__(self, m):
         self.__m = m
-        
 
     def gravitation(self, other):
-        r_pp = Vector.magnitude() 
-        G = 6,674*(pow(10, -11))
-        F_G = G * (self.__m * other.__m)/pow(r_pp, 2)
+        r_pp = Vector.magnitude
+        G = 6, 674 * (pow(10, -11))
+        F_G = G * (self.__m * other.__m) / pow(r_pp, 2)
 
         return F_G
 
-#    def v(self):
+
+# def v(self):
 #        v = Body.addForce(((Vector().magnitude()).normalize()))*gravitation())
 
 #        return v
-
-    
-class commands:
-	
-    def define(self):
-		com1 = "universe"
-		com2 = "rules"
-		
-		usrCom = input()
-		
-		if usrCom == com1:
-			ret = universe()
-			return ret
-		
-#		if usrCom == com2:
-#			ret = rules()
-#			return ret
-		
-        def universe(self):
-			print("please insert universe data! (G, maxX, maxY)")
-			inp = input()
-			self.__G = int(inp)
-			inp2 = input()
-			self.__maxX = int(inp2)
-			inp3= input()
-			self.__maxY = int(inp3)
-			
-			return Universe(G, maxX, maxY)
-		
-#		def rules(self, comNumb = 1): 
-			
-	
-	def add(self):
-		com1 = "body"
-		usrCom = input()
-		
-		if usrCom == com1:
-			ret = body()
-			return ret
-		
-		def body(self):
-			print("please insert planet data! (m, r, xpos, ypos)")
-			inp = input()
-			self.__m = int(inp)
-			inp2 = input()
-			self.__r = int(inp2)
-			inp3 = input()
-			self.__xpos = int(inp3)
-			inp4 = input()
-			self.__ypos = int(inp4)
-			
-			return Body(m, r, xpos, ypos)
-	
-    def show(self):
-		com1 = "animation"
-		com2 = "diagram"
-		com3 = "calculator"
-		
-		usrCom = input()
-		
-		if usrCom == com1:
-			ret = animation()
-			return ret
-		
-		if usrCom == com2:
-			ret = diagram()
-			return ret
-		
-		if usrCom == com3:
-			ret = calculator()
-			return ret
-		
-		def animation(self):
-			
-		def diagram(self):
-		
-		def calculator(self):
-			
-    def delete(self):
-		com1 = "universe"
-		com2 = "body"
-		
-		usrCom = input()
-		
-		if usrCom == com1:
-			ret = universe()
-			return ret
-		
-		if usrCom == com2:
-			ret = body()
-			return ret
-		
-		def universe(self):
-			Universe.delBody(0)
-			Infinity.removeUniverse(0)
-			
-		def body(self):
-			
-				
-      
-        
-    
-    
-
