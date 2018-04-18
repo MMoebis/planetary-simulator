@@ -9,11 +9,14 @@ def getInput():
 def commands(event):
     define = "def"
     adding = "add"
-    defineUniverse = "def universe"
+    defUniverse = "def universe"
+#	universe = "universe"
     addBody = "add body"
     delete = "del"
     show = "show"
     text = getInput()
+		
+	
     if text == define:
        defError = "commands missing!\navailable commands: universe\n"
        textfeld.insert(END, defError)
@@ -22,39 +25,36 @@ def commands(event):
         addError = "commands missing!\navailable commands: body\n"
         textfeld.insert(END, addError)
 
-    if text == defineUniverse:
+    if text == defUniverse:
         defRequest = "Please insert universe data! (G, maxX, maxY)\n"
         textfeld.insert(END, defRequest)
-        defList = []
-        defG = getInput()
-        defList[0] = defG
-        defMaxX = getInput()
-        defList[1] = defMaxX
-        defMaxY = getInput()
-        defList[2] = defMaxY
+        defG = getNumbInput()
+        defMaxX = getNumbInput()
+        defMaxY = getNumbInput()
 
-        universe = Universe(defList[0], defList[1], defList[2])
+        universe = Universe(defG, defMaxX, defMaxY)
         Infinity.addUniverse(universe)
 
     if text == addBody:
         addRequest = "Please insert body data! (m, r, xpos, ypos)\n"
         textfeld.insert(END, addRequest)
-        addList = []
-        addM = getInput()
-        addList[0] = addM
-        addR = getInput()
-        addList[1] = addR
-        addXpos = getInput()
-        addList[2] = addXpos
-        addYpos = getInput()
-        addList[3] = addYpos
+        addM = getNumbInput()
+        addR = getNumbInput()
+        addXpos = getNumbInput()
+        addYpos = getNumbInput()
 
-        body = Body(addList[0], addList[1], addList[2], addList[3])
+        body = Body(addM, addR, addXpos, addYpos)
         Universe.addBody(body)
 
 def test(event):
     print("test")
 
+def getNumbInput():
+	input1 = textfeld.get('1.0', 'end').strip()
+	number = int(input1)
+	
+	return number
+	
 root = Tk()
 root.title("PS")
 root.geometry("200x200")
