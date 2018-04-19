@@ -2,127 +2,16 @@ from tkinter import *
 from math import *
 import sys
 
-def getInput():
-    text = textfeld.get('1.0', 'end').strip()
-    return text
-
-def commands(event):
-    define = "def"
-    adding = "add"
-    defUniverse = "def universe"
-#	universe = "universe"
-    addBody = "add body"
-    delete = "del"
-    show = "show"
-    text = getInput()
-		
-	
-    if text == define:
-       defError = "commands missing!\navailable commands: universe\n"
-       textfeld.insert(END, defError)
-
-    if text == adding:
-        addError = "commands missing!\navailable commands: body\n"
-        textfeld.insert(END, addError)
-
-    if text == defUniverse:
-        defRequest = "Please insert universe data! (G, maxX, maxY)\n"
-        textfeld.insert(END, defRequest)
-        defG = getNumbInput()
-        defMaxX = getNumbInput()
-        defMaxY = getNumbInput()
-
-        universe = Universe(defG, defMaxX, defMaxY)
-        Infinity.addUniverse(universe)
-
-    if text == addBody:
-        addRequest = "Please insert body data! (m, r, xpos, ypos)\n"
-        textfeld.insert(END, addRequest)
-        addM = getNumbInput()
-        addR = getNumbInput()
-        addXpos = getNumbInput()
-        addYpos = getNumbInput()
-
-        body = Body(addM, addR, addXpos, addYpos)
-        Universe.addBody(body)
-
-def test(event):
-    print("test")
-
-def getNumbInput():
-	input1 = textfeld.get('1.0', 'end').strip()
-	number = int(input1)
-	
-	return number
-	
-root = Tk()
-root.title("PS")
-root.geometry("200x200")
-menu = Menu()
-root.config(menu=menu)
-file = Menu(menu)
-#file.add_command(label="Exit", command=self.client_exit)
-menu.add_cascade(label="File", menu=file)
-edit = Menu(menu)
-edit.add_command(label="Undo")
-menu.add_cascade(label="Edit", menu=edit)
-
-textfeld = Text(master=root)
-textfeld.config(wrap='word', width="1920",
-                height="1080", bg="black",
-                foreground="white", insertbackground="white",
-                font="Monaco")
-textfeld.pack(fill="both")
-
-
-root.bind('<Return>', commands)
-
-root.mainloop()
-
-
-class Infinity:
-    def __init__(self):
-        self.__universes = []
-
-    def addUniverse(self, universe):
-        self.__universes.append(universe)
-        return True
-
-    def removeUniverse(self, universe):
-        self.__universes.remove(universe)
-        return True
-
-    def getUniverse(self, i):
-        return self.__universes[i]
-
-class Body:
-    def __init__(self, m, r, xpos, ypos):
+class Rules:
+    def __init__(self, m):
         self.__m = m
-        self.__r = r
-        self.__xpos = xpos
-        self.__ypos = ypos
 
-    def addForce(self, x, y):
-        vec = Vector(x, y)
+    def gravitation(self, other):
+        r_pp = Vector.magnitude
+        G = 6, 674 * (pow(10, -11))
+        F_G = G * (self.__m * other.__m) / pow(r_pp, 2)
 
-        return vec
-
-
-class Universe:
-    def __init__(self, G, maxX, maxY):
-        self.__bodys = []
-        self.__G = G
-        self.__maxX = maxX
-        self.__maxY = maxY
-
-    def addBody(self, body):
-        self.__bodys.append(body)
-
-    def delBody(self, i):
-        del self.__bodys[i]
-
-    def getBody(self, i):
-        return self.__bodys[i]
+        return F_G
 
 
 class Vector:
@@ -155,18 +44,155 @@ class Vector:
 
         return vd
 
+class Infinity:
+    def __init__(self):
+        self.__universes = []
 
-class Rules:
-    def __init__(self, m):
+    def addUniverse(self, universe):
+        self.__universes.append(universe)
+        return True
+
+    def removeUniverse(self, universe):
+        self.__universes.remove(universe)
+        return True
+
+    def getUniverse(self, i):
+        return self.__universes[i]
+
+class Body:
+    def __init__(self, m, r, xpos, ypos):
         self.__m = m
+        self.__r = r
+        self._po_xs = xpos
+        self.__ypos = ypos
 
-    def gravitation(self, other):
-        r_pp = Vector.magnitude
-        G = 6, 674 * (pow(10, -11))
-        F_G = G * (self.__m * other.__m) / pow(r_pp, 2)
+    def addForce(self, x, y):
+        vec = Vector(x, y)
 
-        return F_G
+        return vec
 
+class Universe:
+    def __init__(self, G, maxX, maxY):
+        self.__bodys = []
+        self.__G = G
+        self.__maxX = maxX
+        self.__maxY = maxY
+
+    def addBody(self, body):
+        self.__bodys.append(body)
+
+    def delBody(self, i):
+        del self.__bodys[i]
+
+    def getBody(self, i):
+        return self.__bodys[i]
+	
+define = "def"
+adding = "add"
+delete = "delete"
+comUniverse = " universe"
+comBody = " body"
+show = "show"
+space = " "
+strSpace = space.strip()
+
+defError = "Commands missing! Available commands: -universe"
+strDefError = defError.strip()
+addError = "Commands missing! Available commands: -body"
+strAddError = addError.strip()
+showError = "Commands missing! Available commands: -animation, -diagram"
+strShowError = showError.strip()
+delError = "Commands missing! Available commands: -body, -universe"
+strDelError = delError.strip()
+genError = "No such commands available! For more help type 'help'"
+strGenError = genError.strip()
+
+def getInput():
+    text = textfeld.get('1.0', 'end').strip()
+    if text !=strDefError and text!=strAddError and text!=strShowError and text!=strDelError and text !=strGenError and text!=strSpace:
+        return text
+    else:
+
+def errors():
+    text = getInput()
+
+    if text == define:
+        textfeld.insert(END, defError)
+        com = True		
+    elif text == adding:
+        textfeld.insert(END, addError)
+        com = True
+    elif text == show:
+        textfeld.insert(END, showError)
+        com = True
+    elif text == delete:
+        textfeld.insert(END, delError)
+        return True
+    else:
+    	return True
+
+def commands(event):
+    text = getInput()
+    if text == define + comUniverse:
+        defRequest = "Please insert universe data! (G, maxX, maxY)\n"
+        textfeld.insert(END, defRequest)
+        defG = getNumbInput()
+        defMaxX = getNumbInput()
+        defMaxY = getNumbInput()
+
+        universe = Universe(defG, defMaxX, defMaxY)
+        Infinity.addUniverse(universe)
+
+    elif text == adding + comBody:
+        addRequest = "Please insert body data! (m, r, xpos, ypos)\n"
+        textfeld.insert(END, addRequest)
+        addM = getNumbInput()
+        addR = getNumbInput()
+        addXpos = getNumbInput()
+        addYpos = getNumbInput()
+
+        body = Body(addM, addR, addXpos, addYpos)
+        Universe.addBody(body)
+    else:
+        return False
+
+def test(event):
+    print("test")
+
+def getNumbInput():
+    input1 = textfeld.get('1.0', 'end').strip()
+    print(input1)
+#	number = int(input1)
+def passing():
+    pass
+	
+root = Tk()
+root.title("PS")
+root.geometry("400x400")
+menu = Menu()
+root.config(menu=menu)
+file = Menu(menu)
+#file.add_command(label="Exit", command=self.client_exit)
+menu.add_cascade(label="File", menu=file)
+edit = Menu(menu)
+edit.add_command(label="Undo")
+menu.add_cascade(label="Edit", menu=edit)
+
+textfeld = Text(master=root)
+textfeld.config(wrap='word', width="1920",
+                height="1080", bg="black",
+                foreground="white", insertbackground="white",
+                font="Monaco")
+textfeld.pack(fill="both")
+com = errors()
+
+if com == False:
+    commands() 
+	
+if com == True:
+	root.bind('<Return>', commands)
+	
+root.mainloop()
 
 # def v(self):
 #        v = Body.addForce(((Vector().magnitude()).normalize()))*gravitation())
