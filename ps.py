@@ -2,6 +2,7 @@ from tkinter import *
 from math import *
 import sys
 
+
 class Rules:
     def __init__(self, m):
         self.__m = m
@@ -44,6 +45,7 @@ class Vector:
 
         return vd
 
+
 class Infinity:
     def __init__(self):
         self.__universes = []
@@ -59,6 +61,7 @@ class Infinity:
     def getUniverse(self, i):
         return self.__universes[i]
 
+
 class Body:
     def __init__(self, m, r, xpos, ypos):
         self.__m = m
@@ -70,6 +73,7 @@ class Body:
         vec = Vector(x, y)
 
         return vec
+
 
 class Universe:
     def __init__(self, G, maxX, maxY):
@@ -86,7 +90,8 @@ class Universe:
 
     def getBody(self, i):
         return self.__bodys[i]
-	
+
+
 define = "def"
 adding = "add"
 delete = "delete"
@@ -95,6 +100,14 @@ comBody = " body"
 show = "show"
 space = " "
 strSpace = space.strip()
+
+text = ""
+ret = "\n"
+retCount = 1.0
+i = 0
+
+List = []
+intNumber = 0
 
 defError = "Commands missing! Available commands: -universe"
 strDefError = defError.strip()
@@ -106,73 +119,135 @@ delError = "Commands missing! Available commands: -body, -universe"
 strDelError = delError.strip()
 genError = "No such commands available! For more help type 'help'"
 strGenError = genError.strip()
+heavyError = "System crashed"
+strHeavyError = heavyError.strip()
+
+succes = "Data was succesfully entered"
+strSucces = succes.strip()
+
+def disable():
+    textfeld.config(state=DISABLED)
+    return True
+
+def enable():
+    textfeld.config(state=NORMAL)
+    return True
 
 def getInput():
-    text = textfeld.get('1.0', 'end').strip()
-    if text !=strDefError and text!=strAddError and text!=strShowError and text!=strDelError and text !=strGenError and text!=strSpace:
+    global text
+    text = textfeld.get(retCount, 'end').strip()
+    print(text)
+    if text != strDefError and text != strAddError and text != strShowError and text != strDelError and text != strGenError and text != strSpace:
         return text
     else:
+        return True
+
+def getNumbInput():
+    global retCount
+    retCount += 1.0
+    global text
+    global i
+    global intNumber
+    global List
+    i += 1
+    print(i)
+    text = textfeld.get(retCount, 'end')
+    intNumber = int(text)
+    List.append(intNumber)
+
+    return True
 
 def errors():
+    global text
+    global retCount
     text = getInput()
-
     if text == define:
-        textfeld.insert(END, defError)
-        com = True		
+        textfeld.insert(END, defError+ret)
+        retCount += 1.0
+        return True
     elif text == adding:
-        textfeld.insert(END, addError)
-        com = True
+        textfeld.insert(END, addError+ret)
+        retCount += 1.0
+        return True
     elif text == show:
-        textfeld.insert(END, showError)
-        com = True
+        retCount += 1.0
+        textfeld.insert(END, showError+ret)
+        return True
     elif text == delete:
-        textfeld.insert(END, delError)
+        retCount += 1.0
+        textfeld.insert(END, delError+ret)
         return True
     else:
-    	return True
+        return True
 
-def commands(event):
-    text = getInput()
+
+def commands():
+    global retCount
+    global i
+    print(i)
     if text == define + comUniverse:
         defRequest = "Please insert universe data! (G, maxX, maxY)\n"
+        retCount += 1
         textfeld.insert(END, defRequest)
-        defG = getNumbInput()
-        defMaxX = getNumbInput()
-        defMaxY = getNumbInput()
+        del List[:]
+        i = 1
 
-        universe = Universe(defG, defMaxX, defMaxY)
-        Infinity.addUniverse(universe)
+        if i == 4:
+            Universe(List[0], List[1], List[2])
+            textfeld.insert(END, succes + ret)
+            retCount += 1.0
+            i = 0
+            return True
 
     elif text == adding + comBody:
         addRequest = "Please insert body data! (m, r, xpos, ypos)\n"
         textfeld.insert(END, addRequest)
-        addM = getNumbInput()
-        addR = getNumbInput()
-        addXpos = getNumbInput()
-        addYpos = getNumbInput()
+        del List[:]
+        i = 1
 
-        body = Body(addM, addR, addXpos, addYpos)
-        Universe.addBody(body)
+        if i == 5:
+            retCount += 1.0
+            Body(List[0], List[1], List[2], List[3])
+            textfeld.insert(END, succes + ret)
+            i = 0
+            return True
     else:
         return False
 
 def test(event):
-    print("test")
+    retCount = 2.0
+    textfeld.insert(retCount, "test")
 
-def getNumbInput():
-    input1 = textfeld.get('1.0', 'end').strip()
-    print(input1)
 #	number = int(input1)
 def passing():
     pass
-	
+
+def submit(event):
+    global retCount
+    print(retCount)
+    err = errors()
+    if err == True:
+        if i != 0:
+            getNumbInput()
+        else:
+            com = commands()
+            retCount += 1
+            if com == False:
+                textfeld.insert(END, genError+ret)
+                retCount +=1.0
+
+    else:
+        textfeld.insert(END, heavyError+ret)
+        retCount +=1.0
+
+
 root = Tk()
 root.title("PS")
-root.geometry("400x400")
+root.geometry("600x400")
 menu = Menu()
 root.config(menu=menu)
 file = Menu(menu)
-#file.add_command(label="Exit", command=self.client_exit)
+# file.add_command(label="Exit", command=self.client_exit)
 menu.add_cascade(label="File", menu=file)
 edit = Menu(menu)
 edit.add_command(label="Undo")
@@ -184,14 +259,8 @@ textfeld.config(wrap='word', width="1920",
                 foreground="white", insertbackground="white",
                 font="Monaco")
 textfeld.pack(fill="both")
-com = errors()
+root.bind('<Return>', submit)
 
-if com == False:
-    commands() 
-	
-if com == True:
-	root.bind('<Return>', commands)
-	
 root.mainloop()
 
 # def v(self):
