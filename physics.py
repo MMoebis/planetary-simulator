@@ -49,16 +49,26 @@ class Vector2:
 
 
 class Body:
-    def __init__(self, m, pos):
+    def __init__(self, m, pos, name):
+        self.__name = name
         self.__m = m
         self.__pos = pos
         self.__velocity = Vector2(0, 0)
+
+    def get_name(self):
+        return self.__name
 
     def add_force(self, force):
         self.__velocity += force / self.__m
 
     def get_pos(self):
         return self.__pos
+
+    def get_X(self):
+        return self.get_pos().get_x()
+
+    def get_Y(self):
+        return self.get_pos().get_y()
 
     def get_velocity(self):
         return self.__velocity
@@ -71,20 +81,34 @@ class Body:
 
 
 class Planet(Body):
-    def __init__(self, m, pos, r, canvas, outline='white', fill='blue'):
-        super().__init__(m, pos)
+    def __init__(self, m, pos, name, r, scale, canvas, outline='white', fill='blue'):
+        super().__init__(m, pos, name)
         self.__r = r
+        self.__scale = scale
         self.__canvas = canvas
-        self.__canvas_id = canvas.create_oval(pos.get_x() - r, pos.get_y() - r,
-                                              pos.get_x() + r, pos.get_y() + r,
+        self.__name = name
+        self.__canvas_id = canvas.create_oval(pos.get_x() - r * self.__scale, pos.get_y() - r * self.__scale,
+                                              pos.get_x() + r * self.__scale, pos.get_y() + r * self.__scale,
                                               outline=outline, fill=fill)
+
+    def set_scale(self, scale):
+        self.__scale = scale
+
+    def get_scale(self):
+        return self.__scale
+
+    def get_name(self):
+        return self.__name
 
     def update_canvas(self):
         pos = self.get_pos()
         r = self.__r
         self.__canvas.coords(self.__canvas_id,
-                             pos.get_x() - r, pos.get_y() - r,
-                             pos.get_x() + r, pos.get_y() + r)
+                             pos.get_x() * self.__scale - r * self.__scale, pos.get_y() * self.__scale - r * self.__scale,
+                             pos.get_x() * self.__scale + r * self.__scale, pos.get_y() * self.__scale + r * self.__scale)
+
+    def get_r(self):
+        return self.__r
 
 
 class Universe:
@@ -127,34 +151,45 @@ class Universe:
     def __getitem__(self, item):
         return self.__bodies[item]
 
+    def maximum_coordinates(self):
+        max_values = []
+        max_x = 0
+        max_y = 0
+        x_list = []
+        y_list = []
 
-class Main:
-    def __init__(self, g=100000, delta_time=0.01):
-        self.__root = Tk()
-        self.__canvas = Canvas(self.__root, width=400, height=400)
-        self.__canvas.pack()
-        self.__delta_time = delta_time
-        self.universe = Universe(g=g)
-        self.test()
-        self.__canvas.pack()
-        self.__root.after(0, self.update)
-        self.__root.mainloop()
+        for j in range(len(self.__bodies)):
+            planet = self.__getitem__(j)
+            x = planet.get_X()
+            x_list.append(x)
+            y = planet.get_Y()
+            y_list.append(y)
+        for k in range(len(x_list)-1):
+            if x_list[k+1] > x_list[k] and x_list[k+1] > max_x:
+                max_x = x_list[k+1]
+        for l in range(len(y_list)-1):
+            if y_list[l+1] > y_list[l] and y_list[l+1] > max_y:
+                max_y = y_list[l+1]
 
-    def update(self):
-        while True:
-            self.__canvas.update()
-            for i in self.universe:
-                i.update_canvas()
-            self.universe.compute_physics(self.__delta_time)
-            time.sleep(self.__delta_time)
+        max_values.append(max_x)
+        max_values.append(max_y)
 
-    def test(self):
-        self.universe.add_body(Planet(1.5, Vector2(100, 100), 10, self.__canvas, fill='blue'))
-        self.universe.add_body(Planet(1, Vector2(200, 200), 8, self.__canvas, fill='green'))
-        self.universe.add_body(Planet(0.5, Vector2(150, 300), 6, self.__canvas, fill='red'))
-        self.universe[0].add_force(Vector2(0, 20))
-        self.universe[1].add_force(Vector2(0, -30))
+        return max_values
 
+    def get_planet_info(self):
+        info_list = []
+        name_list = []
+        mass_list = []
+        radius_list =[]
 
-if __name__ == '__main__':
-    Main()
+        for p in range(len(self.__bodies)):
+            planet = self.__getitem__(p)
+            name_list.append(planet.get_name())
+            mass_list.append(planet.get_mass())
+            radius_list.append(planet.get_r())
+
+        return info_list.append(name_list), info_list.append(mass_list), info_list.append(radius_list)
+
+    def delete_item(self, item):
+        self.__bodies.remove(item)
+
