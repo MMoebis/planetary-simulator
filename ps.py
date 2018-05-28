@@ -12,8 +12,6 @@ class Animation:
         self.__max_x = 0
         self.__max_y = 0
 
-        self.__line_count = 1.0
-
         self.__coordinate_count = 0
 
         self.__point_mark = False
@@ -27,6 +25,14 @@ class Animation:
 
         self.__scale = 1
 
+        self.__last_delta_time_factor = 5000
+        self.__delta_time_frac = 0
+        self.__delta_time_factor = 0
+
+        self.__last_velo = 5000
+
+        self.__lines = []
+
         #self.__canvas_pos_x_scroll_region = self.__max_x
         #self.__canvas_pos_y_scroll_region = self.__max_y
         #self.__canvas_neg_x_scroll_region = -self.__max_x
@@ -37,6 +43,7 @@ class Animation:
         self.__y_coordinates = []
         self.__m_List = []
         self.__s_List = []
+        self.__c_List = []
 
         self.__delta_time = delta_time
         self.__g = g
@@ -44,7 +51,7 @@ class Animation:
         self.universe = Universe(self.__g)
 
         self.__canvas_frame = Frame(self.__master, height=600, width=800)
-        self.__canvas_frame.grid(row=0, rowspan=2, column=1)
+        self.__canvas_frame.grid(row=0, rowspan=2, column=1, sticky="nsew", padx=0)
 
         self.__canvas = Canvas(self.__canvas_frame, height=569, width=680, bg='black',
                                scrollregion=(-100000, -100000, 100000, 100000))
@@ -64,7 +71,7 @@ class Animation:
         self.__canvas.pack(side=LEFT, expand=True, fill=BOTH)
 
         self.__button_frame = Frame(self.__master, bg='black', width=800)
-        self.__button_frame.grid(row=2, column=1)
+        self.__button_frame.grid(row=2, column=1, padx=0)
 
         self.__start_button = Button(self.__button_frame, text="Start", command=self.start_animation)
         self.__start_button.pack(side=LEFT)
@@ -77,6 +84,15 @@ class Animation:
 
         self.__neg_scale_button = Button(self.__button_frame, text="Zoom out", command=self.neg_item_scale)
         self.__neg_scale_button.pack(side=LEFT)
+
+        self.__del_mark_button = Button(self.__button_frame, text="Delete pointmark", command=self.delete_pointmark)
+        self.__del_mark_button.pack(side=LEFT)
+
+        self.__del_vectors_button = Button(self.__button_frame, text="Delete vector lines", command=self.delete_vector_lines)
+        self.__del_vectors_button.pack(side=LEFT)
+
+        self.__remove_all_button = Button(self.__button_frame, text="Remove all bodies", command=self.remove_all)
+        self.__remove_all_button.pack(side=LEFT)
 
         self.__master.title("PS")
 
@@ -97,6 +113,7 @@ class Animation:
         self.__file.add_command(label="Save as...", command=self.save_file)
         self.__file.add_command(label="Exit", command=self.exit)
         self.__popup.add_command(label="Add Body...", command=self.add_body)
+        self.__popup.add_command(label="Add vector...", command=self.add_vector)
 
         self.__edit.add_cascade(label="Background", menu=self.__background)
 
@@ -108,10 +125,10 @@ class Animation:
         self.__new.add_command(label="Body...", command=self.add_body)
 
         self.__canvas2 = Canvas(self.__master, width=200, height=765, bg='grey')
-        self.__canvas2.grid(row=0, column=0, rowspan=4, sticky="nsew")
+        self.__canvas2.grid(row=0, column=0, rowspan=4, sticky="nsew", padx=0)
 
         self.__legend_frame = Frame(self.__master, width=300, height=300)
-        self.__legend_frame.grid(row=0, column=2, sticky="nsew")
+        self.__legend_frame.grid(row=0, column=2, sticky="nsew", padx=0)
 
         self.legend_canvas = Canvas(self.__legend_frame)
 
@@ -127,11 +144,24 @@ class Animation:
         self.__color_label = Label(self.__legend_frame, text="Color", font=('bold', 15))
         self.__color_label.grid(row=0, column=3, padx=16)
 
-        self.__canvas4 = Canvas(self.__master, height=300, width=300, bg='#D8D8D8')
-        self.__canvas4.grid(row=1, column=2, sticky="nsew", rowspan=2)
+        self.__diagram_frame = Frame(self.__master, height=300, width=300)
+        self.__diagram_frame.grid(row=1, column=2, sticky="nsew", padx=0)
+
+        self.__canvas4 = Canvas(self.__diagram_frame, height=50, width=300, bg='#D8D8D8',
+                                scrollregion=(-10000, -10000, 10000, 10000))
+
+        self.__diagram_x_scroll = Scrollbar(self.__diagram_frame, command=self.__canvas4.xview, orient=HORIZONTAL)
+        self.__diagram_x_scroll.pack(side=BOTTOM, fill=X)
+
+        self.__diagram_y_scroll = Scrollbar(self.__diagram_frame, command=self.__canvas4.yview, orient=VERTICAL)
+        self.__diagram_y_scroll.pack(side=RIGHT, fill=Y)
+
+        self.__canvas4.config(yscrollcommand=self.__diagram_y_scroll.set, xscrollcommand=self.__diagram_x_scroll.set)
+
+        self.__canvas4.pack(side=LEFT, expand=True, fill=BOTH)
 
         self.__text_frame = Frame(self.__master, height=10, width=138)
-        self.__text_frame.grid(column=1, row=3, columnspan=3, sticky="nsew")
+        self.__text_frame.grid(column=1, row=3, columnspan=3, sticky="nsew", padx=0)
 
         self.__text_y_scroll = Scrollbar(self.__text_frame)
         self.__text_y_scroll.pack(side=RIGHT, fill=Y)
@@ -144,10 +174,10 @@ class Animation:
 
         self.__text_y_scroll.config(command=self.__textfield.yview)
 
-        self.__canvas.bind('<ButtonPress-3>', self.get_mouse_coordinates)
-        self.__canvas.bind('<B3-Motion>', self.canvas_drag)
+        self.__canvas.bind('<ButtonPress-2>', self.get_mouse_coordinates)
+        self.__canvas.bind('<B2-Motion>', self.canvas_drag)
         self.__canvas.bind('<Button-1>', self.mark_coordinate)
-        self.__canvas.bind('<Button-2>', self.options)
+        self.__canvas.bind('<Button-3>', self.options)
 
         self.__master.grid_rowconfigure(0, weight=2)
         self.__master.grid_rowconfigure(1, weight=2)
@@ -157,7 +187,7 @@ class Animation:
 
         self.__callback = True
 
-        self.test()
+        #self.test()
 
     def test(self):
         self.universe.add_body(Planet(1e18, Vector2(250, 250), "t1", 10, self.__scale, self.__canvas, fill='orange'))
@@ -173,6 +203,7 @@ class Animation:
 
     def update(self):
         while self.__callback == True:
+            self.__delta_time_frac += 1
             self.__canvas.update()
             for i in self.universe:
                 i.set_scale(self.__scale)
@@ -180,7 +211,29 @@ class Animation:
 
             self.universe.compute_physics(self.__delta_time)
             time.sleep(self.__delta_time)
-            #self.transitional_collision()
+            self.animation_collision()
+            #self.diagram_animation()
+
+    def animation_collision(self):
+        collision = self.universe.collision()
+        if collision[0] == True:
+            if collision[1] == False:
+                self.__canvas.delete(collision[2])
+            if collision[1] == True:
+                body1_velocity = collision[2].get_velocity()
+                body2_velocity = collision[3].get_velocity()
+
+                body1_mass = collision[2].get_mass()
+                body2_mass = collision[3].get_mass()
+
+
+
+                F1 = body1_velocity * (body1_mass)
+                F2 = body2_velocity * (-1.0 * body2_mass)
+
+                collision[2].add_force(F1)
+                collision[3].add_force(F2)
+                print(F1, F2)
 
     def update_canvas_scrollregion(self):
         transitional = self.universe.maximum_coordinates()
@@ -231,15 +284,82 @@ class Animation:
         self.__point_mark = True
         self.__point_mark_x = event.x
         self.__point_mark_y = event.y
-        self.__mark_line0 = self.__canvas.create_line(event.x+15, event.y, event.x+5, event.y, fill='white')
-        self.__mark_line1 = self.__canvas.create_line(event.x, event.y+15, event.x, event.y+5, fill='white')
-        self.__mark_line2 = self.__canvas.create_line(event.x-15, event.y, event.x-5, event.y, fill='white')
-        self.__mark_line3 = self.__canvas.create_line(event.x, event.y-15, event.x, event.y-5, fill='white')
+        self.__mark_line0 = self.__canvas.create_line(self.__point_mark_x+15, self.__point_mark_y,
+                                                      self.__point_mark_x+5, self.__point_mark_y, fill='white')
+        self.__mark_line1 = self.__canvas.create_line(self.__point_mark_x, self.__point_mark_y+15,
+                                                      self.__point_mark_x, self.__point_mark_y+5, fill='white')
+        self.__mark_line2 = self.__canvas.create_line(self.__point_mark_x-15, self.__point_mark_y,
+                                                      self.__point_mark_x-5, self.__point_mark_y, fill='white')
+        self.__mark_line3 = self.__canvas.create_line(self.__point_mark_x, self.__point_mark_y-15,
+                                                      self.__point_mark_x, self.__point_mark_y-5, fill='white')
 
-        self.__textfield.insert(self.__line_count, "X: " + str(event.x) + " Y: " + str(event.y))
-        self.__line_count += 1
+        self.__textfield.insert(END, "X: " + str(event.x) + " Y: " + str(event.y) + "\n")
 
-        print(self.__line_count)
+    def diagram_animation(self):
+        self.__delta_time_factor = self.__delta_time * self.__delta_time_frac
+        for i in self.universe:
+            velocity = i.get_velocity()
+            if velocity < 0:
+                velocity *= -1
+            self.__canvas4.create_line(self.__last_delta_time_factor, self.__last_velo, self.__delta_time_factor,
+                                       velocity, fill='red')
+
+    def delete_pointmark(self):
+        self.__canvas.delete(self.__mark_line0, self.__mark_line1, self.__mark_line2, self.__mark_line3)
+        self.__point_mark = False
+
+    def add_vector(self):
+        self.master3 = Tk()
+        self.master3.title("add a vector")
+
+        self.e9 = Entry(self.master3)
+        self.e10 = Entry(self.master3)
+        self.e11 = Entry(self.master3)
+
+        l9 = Label(self.master3, text="Name of the Planet")
+        l10 = Label(self.master3, text="X \n (position in coordinate system)")
+        l11 = Label(self.master3, text="Y \n (position in coordinate system)")
+        submit2 = Button(self.master3, text="submit", command=self.add_vector_submit)
+
+        self.e9.grid(row=0, column=1, padx=2.5, pady=2.5)
+        self.e10.grid(row=1, column=1, padx=2.5, pady=2.5)
+        self.e11.grid(row=2, column=1, padx=2.5, pady=2.5)
+        l9.grid(row=0, column=0, padx=2.5, pady=2.5)
+        l10.grid(row=1, column=0, padx=2.5, pady=2.5)
+        l11.grid(row=2, column=0, padx=2.5, pady=2.5)
+        submit2.grid(row=5, columnspan=2)
+
+        if self.__point_mark == True:
+            self.e10.insert(0, self.__point_mark_x)
+            self.e11.insert(0, self.__point_mark_y)
+
+    def add_vector_submit(self):
+        name = self.e9.get()
+        x = int(self.e10.get())
+        y = int(self.e11.get())
+        bodies = self.universe.get_bodies()
+        for g in range(bodies):
+            if self.universe[g].get_name() == name:
+                x_vector = self.universe[g].get_pos().get_x()
+                y_vector = self.universe[g].get_pos().get_y()
+                self.universe[g].add_force(Vector2(x-x_vector, y-y_vector))
+                line = self.__canvas.create_line(x_vector, y_vector, x, y, fill='white')
+                oval = self.__canvas.create_oval(x-5, y-5, x+5, y+5, fill='white')
+                self.__lines.append(line)
+                self.__lines.append(oval)
+                self.__textfield.insert(END, "The vector " + str(x-x_vector) + "," + str(y-y_vector)
+                                        + " has been attached on the body " + name + "\n")
+        self.master3.destroy()
+
+    def delete_vector_lines(self):
+        for i in self.__lines:
+            self.__lines.remove(i)
+            self.__canvas.delete(i)
+
+    def remove_all(self):
+        self.__canvas.delete("all")
+        self.universe = Universe(self.__g)
+        self.__textfield.insert(END, "All bodies were removed from the universe! \n")
 
     def options(self, event):
         if self.__point_mark == True:
@@ -257,48 +377,22 @@ class Animation:
         self.__canvas.after(0, self.update)
         #self.__canvas.after(0, self.update_canvas_scrollregion)
 
-    def collision(self):
-        print("error 1")
-        for e in self.universe:
-            print("error 2")
-            for f in self.universe:
-                print("error 3")
-                planet1 = e.get_pos() * e.get_scale()
-                planet2 = f.get_pos() * f.get_scale()
-                x = planet1.get_x() - planet2.get_x()
-                y = planet1.get_y() - planet2.get_y()
-                distance = sqrt(x**2 + y**2)
-
-                if e.get_name() != f.get_name():
-                    print("error 4")
-                    if distance == e.get_r() * e.get_scale() + f.get_r() * f.get_scale():
-                        print("error 5")
-                        if e.get_r() < f.get_r():
-                            print("error 6")
-                            self.universe.delete_item(planet1)
-                        if f.get_r() < e.get_r():
-                            print("error 7")
-                            self.universe.delete_item(planet2)
-
-    def transitional_collision(self):
-        for e in self.universe:
-            for f in self.universe:
-                if e.get_name() != f.get_name() and e.get_pos() == f.get_pos():
-                    self.universe.delete_item(f)
-
     def reset_animation(self):
+        self.__scale = 1
         self.__canvas.delete("all")
         self.__start_button.configure(text="Start", command=self.start_animation)
         self.__callback = False
         self.universe = Universe(self.__g)
-        for c in range(self.__coordinate_count):
+        for c in range(len(self.__planet_names)):
             self.rN = self.__planet_names[c]
             self.rX = self.__x_coordinates[c]
             self.rY = self.__y_coordinates[c]
             self.rM = self.__m_List[c]
             self.rS = self.__s_List[c]
+            self.rC = self.__c_List[c]
 
-            self.universe.add_body(Planet(self.M, Vector2(self.X, self.Y), self.rN, self.S, self.__canvas, fill='orange'))
+            self.universe.add_body(Planet(self.rM, Vector2(self.rX, self.rY), self.rN, self.rS, self.__scale, self.__canvas, fill=self.rC))
+        self.__textfield.insert(END, "Animation has been resettet! \n")
 
     def submit(self):
         print("submit")
@@ -312,7 +406,7 @@ class Animation:
 
     def edit_bg_color(self):
         self.__color = cs.askcolor(color='black', title="choose a color")
-        print(self.__color)
+        return self.__color[1]
 
     def define_universe(self):
         self.master1 = Tk()
@@ -330,6 +424,10 @@ class Animation:
         self.l1.grid(row=0, column=0, padx=5, pady=5)
         self.l2.grid(row=1, column=0, padx=5, pady=5)
 
+    def edit_body_color(self):
+        color = self.edit_bg_color()
+        self.e8.insert(0, color)
+
     def add_body(self):
         self.master2 = Tk()
         self.master2.title("add a body")
@@ -339,12 +437,14 @@ class Animation:
         self.e5 = Entry(self.master2)
         self.e6 = Entry(self.master2)
         self.e7 = Entry(self.master2)
+        self.e8 = Entry(self.master2)
 
         self.l3 = Label(self.master2, text="Name")
         self.l4 = Label(self.master2, text="X \n (position in coordinate system)")
         self.l5 = Label(self.master2, text="Y \n (position in coordinate system)")
         self.l6 = Label(self.master2, text="m \n (mass)")
         self.l7 = Label(self.master2, text="radius")
+        self.e8_button = Button(self.master2, text="color...", command=self.edit_body_color)
         self.submit2 = Button(self.master2, text="submit", command=self.add_body_submit)
 
         self.e3.grid(row=0, column=1, padx=2.5, pady=2.5)
@@ -352,20 +452,20 @@ class Animation:
         self.e5.grid(row=2, column=1, padx=2.5, pady=2.5)
         self.e6.grid(row=3, column=1, padx=2.5, pady=2.5)
         self.e7.grid(row=4, column=1, padx=2.5, pady=2.5)
+        self.e8.grid(row=5, column=1, padx=2.5, pady=2.5)
         self.l3.grid(row=0, column=0, padx=2.5, pady=2.5)
         self.l4.grid(row=1, column=0, padx=2.5, pady=2.5)
         self.l5.grid(row=2, column=0, padx=2.5, pady=2.5)
         self.l6.grid(row=3, column=0, padx=2.5, pady=2.5)
         self.l7.grid(row=4, column=0, padx=2.5, pady=2.5)
-        self.submit2.grid(row=5, columnspan=2)
+        self.e8_button.grid(row=5, column=0, padx=2.5, pady=2.5)
+        self.submit2.grid(row=6, columnspan=2)
 
         if self.__point_mark == True:
             self.e4.insert(0, self.__point_mark_x)
             self.e5.insert(0, self.__point_mark_y)
 
     def add_body_submit(self):
-        print(self.__scale_count)
-
         row = 1
         column = 0
 
@@ -383,12 +483,10 @@ class Animation:
         self.s = self.e7.get().strip()
         self.S = int(self.s)
 
-        self.adding = self.universe.add_body(Planet(self.M, Vector2(self.X, self.Y), self.N, self.S, self.__scale, self.__canvas, fill='orange'))
+        self.c = self.e8.get().strip()
 
-        print(self.adding)
-
-        a = self.universe.get_planet_info()
-        print(a)
+        self.adding = self.universe.add_body(Planet(self.M, Vector2(self.X, self.Y), self.N, self.S, self.__scale,
+                                                    self.__canvas, fill=self.c))
 
         self.__planet_names.append(self.N)
         self.__coordinate_count += 1
@@ -399,6 +497,8 @@ class Animation:
         self.__m_List.append(self.M)
         self.__coordinate_count += 1
         self.__s_List.append(self.S)
+        self.__coordinate_count += 1
+        self.__c_List.append(self.c)
         self.__coordinate_count += 1
 
         for p in range(len(self.__planet_names)):
@@ -414,8 +514,7 @@ class Animation:
         #self.universe[0].add_force(Vector2(0, 20))
         #self.universe[1].add_force(Vector2(0, -30))
 
-        self.__textfield.insert(self.__line_count, "The body " + "'" + self.N + "'" + " was sucessfully added to Universe!")
-        self.__line_count += 1
+        self.__textfield.insert(END, "The body " + "'" + self.N + "'" + " was successfully added to the Universe! \n")
 
         self.__point_mark = False
 

@@ -61,6 +61,9 @@ class Body:
     def add_force(self, force):
         self.__velocity += force / self.__m
 
+    def remove_force(self, force):
+        self.__velocity -= force / self.__m
+
     def get_pos(self):
         return self.__pos
 
@@ -72,6 +75,9 @@ class Body:
 
     def get_velocity(self):
         return self.__velocity
+
+    def set_velocity(self, velocity):
+        self.__velocity = velocity
 
     def get_mass(self):
         return self.__m
@@ -110,12 +116,16 @@ class Planet(Body):
     def get_r(self):
         return self.__r
 
+    def get_canvas_id(self):
+        return self.__canvas_id
+
 
 class Universe:
     def __init__(self, g):
         self.__bodies = []
         self.__g = g
         self.__current = 0
+        self.__ret_list = []
 
     def add_body(self, body):
         self.__bodies.append(body)
@@ -135,7 +145,12 @@ class Universe:
         mass2 = body2.get_mass()
         distance = body1.get_pos().distance(body2.get_pos())
         direction = body2.get_pos() - body1.get_pos()
-        return direction.normalize() * (self.__g * mass1 * mass2 / distance ** 2)
+        norm = direction.normalize()
+        ret = direction.normalize() * (self.__g * mass1 * mass2 / distance ** 2)
+        last = self.__g * mass1 * mass2 / distance ** 2
+        dist = body1.get_pos().distance(body2.get_pos())
+        print(ret, direction, dist, norm, last)
+        return ret
 
     def __iter__(self):
         return self
@@ -193,3 +208,59 @@ class Universe:
     def delete_item(self, item):
         self.__bodies.remove(item)
 
+    def collision(self):
+        ret_list = []
+        ret_list.append(False)
+        if len(self.__bodies) > 1:
+            for i in range(len(self.__bodies)):
+                for j in range(i + 1, len(self.__bodies)):
+                    body1 = self.__bodies[i]
+                    body2 = self.__bodies[j]
+                    body1_pos = body1.get_pos()
+                    body2_pos = body2.get_pos()
+                    distance = body1_pos.distance(body2_pos)
+                    body1_scale = body1.get_scale()
+                    body2_scale = body2.get_scale()
+                    r1 = body1.get_r() * body1_scale
+                    r2 = body2.get_r() * body2_scale
+                    body1_canvas_id = body1.get_canvas_id()
+                    body2_canvas_id = body2.get_canvas_id()
+
+                    if distance <= r1 + r2:
+                        if r1 > r2:
+                            ret_list[0] = True
+                            if r2 * 10000 < r1:
+                                ret_list.append(False)
+                                self.__bodies.remove(body2)
+                                ret_list.append(body2_canvas_id)
+                                return ret_list
+                            else:
+                                ret_list.append(True)
+                                ret_list.append(body1)
+                                ret_list.append(body2)
+                                return ret_list
+                        if r1 < r2:
+                            ret_list[0] = True
+                            if r1 * 10000 < r2:
+                                ret_list.append(False)
+                                self.__bodies.remove(body1)
+                                ret_list.append(body1_canvas_id)
+                                return ret_list
+                            else:
+                                ret_list.append(True)
+                                ret_list.append(body1)
+                                ret_list.append(body2)
+                                return ret_list
+                        if r1 == r2:
+                            ret_list[0] = True
+                            ret_list.append(True)
+                            ret_list.append(body1)
+                            ret_list.append(body2)
+                            return ret_list
+                    else:
+                        return ret_list
+        else:
+            return ret_list
+
+    def get_bodies(self):
+        return len(self.__bodies)
