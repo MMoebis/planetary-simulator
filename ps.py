@@ -6,7 +6,6 @@ import tkinter.colorchooser as cs
 import sys
 
 
-
 class Animation:
     def __init__(self, master, delta_time, g):
         self.__max_x = 0
@@ -26,10 +25,11 @@ class Animation:
         self.__scale = 1
 
         self.__last_delta_time_factor = 5000
-        self.__delta_time_frac = 0
+        self.__delta_time_count = 0
         self.__delta_time_factor = 0
 
-        self.__last_velo = 5000
+        self.__last_speed = 0
+        self.__speed = 0
 
         self.__lines = []
 
@@ -88,7 +88,8 @@ class Animation:
         self.__del_mark_button = Button(self.__button_frame, text="Delete pointmark", command=self.delete_pointmark)
         self.__del_mark_button.pack(side=LEFT)
 
-        self.__del_vectors_button = Button(self.__button_frame, text="Delete vector lines", command=self.delete_vector_lines)
+        self.__del_vectors_button = Button(self.__button_frame, text="Delete vector lines",
+                                           command=self.delete_vector_lines)
         self.__del_vectors_button.pack(side=LEFT)
 
         self.__remove_all_button = Button(self.__button_frame, text="Remove all bodies", command=self.remove_all)
@@ -148,7 +149,7 @@ class Animation:
         self.__diagram_frame.grid(row=1, column=2, sticky="nsew", padx=0)
 
         self.__canvas4 = Canvas(self.__diagram_frame, height=50, width=300, bg='#D8D8D8',
-                                scrollregion=(-10000, -10000, 10000, 10000))
+                                scrollregion=(-10000, -1000, 10000, 1000))
 
         self.__diagram_x_scroll = Scrollbar(self.__diagram_frame, command=self.__canvas4.xview, orient=HORIZONTAL)
         self.__diagram_x_scroll.pack(side=BOTTOM, fill=X)
@@ -159,6 +160,10 @@ class Animation:
         self.__canvas4.config(yscrollcommand=self.__diagram_y_scroll.set, xscrollcommand=self.__diagram_x_scroll.set)
 
         self.__canvas4.pack(side=LEFT, expand=True, fill=BOTH)
+
+        self.__canvas4.create_line(150, -500, 150, 500)
+
+        self.__canvas4.create_line(-10000, 150, 10000, 150, fill='black')
 
         self.__text_frame = Frame(self.__master, height=10, width=138)
         self.__text_frame.grid(column=1, row=3, columnspan=3, sticky="nsew", padx=0)
@@ -174,10 +179,10 @@ class Animation:
 
         self.__text_y_scroll.config(command=self.__textfield.yview)
 
-        self.__canvas.bind('<ButtonPress-2>', self.get_mouse_coordinates)
-        self.__canvas.bind('<B2-Motion>', self.canvas_drag)
+        self.__canvas.bind('<ButtonPress-3>', self.get_mouse_coordinates)
+        self.__canvas.bind('<B3-Motion>', self.canvas_drag)
         self.__canvas.bind('<Button-1>', self.mark_coordinate)
-        self.__canvas.bind('<Button-3>', self.options)
+        self.__canvas.bind('<Button-2>', self.options)
 
         self.__master.grid_rowconfigure(0, weight=2)
         self.__master.grid_rowconfigure(1, weight=2)
@@ -190,29 +195,58 @@ class Animation:
         #self.test()
 
     def test(self):
-        self.universe.add_body(Planet(1e18, Vector2(250, 250), "t1", 10, self.__scale, self.__canvas, fill='orange'))
-        self.universe.add_body(Planet(1e18, Vector2(450, 450), "t2", 10, self.__scale, self.__canvas, fill='blue'))
-        self.universe.add_body(Planet(1e18, Vector2(850, 650), "t3", 10, self.__scale, self.__canvas, fill='yellow'))
-        self.universe.add_body(Planet(1e18, Vector2(1050, 850), "t4", 10, self.__scale, self.__canvas, fill='lightblue'))
-        self.universe.add_body(Planet(1e18, Vector2(600, 250), "t5", 8, self.__scale, self.__canvas, fill='green'))
-        self.universe.add_body(Planet(1e18, Vector2(750, 300), "t6", 6, self.__scale, self.__canvas, fill='red'))
-        self.universe.add_body(Planet(1e18, Vector2(950, 500), "t7", 5, self.__scale, self.__canvas, fill="black"))
-        self.universe.add_body(Planet(1e18, Vector2(250, 750), "t8", 10, self.__scale, self.__canvas, fill='lightgreen'))
+        self.universe.add_body(Planet(1e18, Vector2(250, 250), "t1", 10, self.__scale, self.__canvas, 'orange'))
+        self.universe.add_body(Planet(1e18, Vector2(450, 450), "t2", 10, self.__scale, self.__canvas, 'blue'))
+        self.universe.add_body(Planet(1e18, Vector2(850, 650), "t3", 10, self.__scale, self.__canvas, 'yellow'))
+        self.universe.add_body(Planet(1e18, Vector2(1050, 850), "t4", 10, self.__scale, self.__canvas, 'lightblue'))
+        self.universe.add_body(Planet(1e18, Vector2(600, 250), "t5", 8, self.__scale, self.__canvas, 'green'))
+        self.universe.add_body(Planet(1e18, Vector2(750, 300), "t6", 6, self.__scale, self.__canvas, 'red'))
+        self.universe.add_body(Planet(1e18, Vector2(950, 500), "t7", 5, self.__scale, self.__canvas, "black"))
+        self.universe.add_body(Planet(1e18, Vector2(250, 750), "t8", 10, self.__scale, self.__canvas, 'lightgreen'))
         self.universe[0].add_force(Vector2(0, 20))
         self.universe[1].add_force(Vector2(0, -30))
 
     def update(self):
         while self.__callback == True:
-            self.__delta_time_frac += 1
             self.__canvas.update()
             for i in self.universe:
                 i.set_scale(self.__scale)
+                last_pos = i.get_pos()
+                i.set_last_pos(last_pos)
                 i.update_canvas()
 
             self.universe.compute_physics(self.__delta_time)
+            self.__delta_time_factor += self.__delta_time
+            for j in self.universe:
+                last_pos_x = j.get_last_pos().get_x()
+                last_pos_y = j.get_last_pos().get_y()
+                pos_x = j.get_pos().get_x()
+                pos_y = j.get_pos().get_y()
+                print(self.__last_speed)
+                velocity = self.universe.get_body_velocity()
+                for k in range(len(velocity)):
+                    velo = velocity[k]
+                    self.__speed = velo * self.__delta_time
+                    self.__canvas4.create_line(self.__last_delta_time_factor + 150, self.__last_speed + 150,
+                                               self.__delta_time_factor + 150, self.__speed + 150, fill=j.get_color())
+                    self.__last_speed = self.__speed
+                self.__canvas.create_line(last_pos_x, last_pos_y, pos_x, pos_y, fill=j.get_color())
             time.sleep(self.__delta_time)
+            self.__last_delta_time_factor += self.__delta_time
             self.animation_collision()
             #self.diagram_animation()
+
+    def get_last_delta_time_factor(self):
+        return self.__last_delta_time_factor
+
+    def set_last_delta_time_factor(self, l_d_t_factor):
+        self.__last_delta_time_factor = l_d_t_factor
+
+    def get_delta_time_factor(self):
+        return self.__delta_time_factor
+
+    def set_delta_time_factor(self, d_t_factor):
+        self.__delta_time_factor = d_t_factor
 
     def animation_collision(self):
         collision = self.universe.collision()
@@ -391,7 +425,8 @@ class Animation:
             self.rS = self.__s_List[c]
             self.rC = self.__c_List[c]
 
-            self.universe.add_body(Planet(self.rM, Vector2(self.rX, self.rY), self.rN, self.rS, self.__scale, self.__canvas, fill=self.rC))
+            self.universe.add_body(Planet(self.rM, Vector2(self.rX, self.rY), self.rN, self.rS, self.__scale,
+                                          self.__canvas, self.rC))
         self.__textfield.insert(END, "Animation has been resettet! \n")
 
     def submit(self):
@@ -486,7 +521,7 @@ class Animation:
         self.c = self.e8.get().strip()
 
         self.adding = self.universe.add_body(Planet(self.M, Vector2(self.X, self.Y), self.N, self.S, self.__scale,
-                                                    self.__canvas, fill=self.c))
+                                                    self.__canvas, self.c))
 
         self.__planet_names.append(self.N)
         self.__coordinate_count += 1

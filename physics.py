@@ -87,15 +87,17 @@ class Body:
 
 
 class Planet(Body):
-    def __init__(self, m, pos, name, r, scale, canvas, outline='white', fill='blue'):
+    def __init__(self, m, pos, name, r, scale, canvas, color, outline='white'):
         super().__init__(m, pos, name)
+        self.__color = color
         self.__r = r
         self.__scale = scale
         self.__canvas = canvas
         self.__name = name
+        self.__last_pos = Vector2(0, 0)
         self.__canvas_id = canvas.create_oval(pos.get_x() - r * self.__scale, pos.get_y() - r * self.__scale,
                                               pos.get_x() + r * self.__scale, pos.get_y() + r * self.__scale,
-                                              outline=outline, fill=fill)
+                                              outline=outline, fill=self.__color)
 
     def set_scale(self, scale):
         self.__scale = scale
@@ -119,6 +121,15 @@ class Planet(Body):
     def get_canvas_id(self):
         return self.__canvas_id
 
+    def get_last_pos(self):
+        return self.__last_pos
+
+    def set_last_pos(self, pos):
+        self.__last_pos = pos
+
+    def get_color(self):
+        return self.__color
+
 
 class Universe:
     def __init__(self, g):
@@ -126,6 +137,7 @@ class Universe:
         self.__g = g
         self.__current = 0
         self.__ret_list = []
+        self.__body_velo = []
 
     def add_body(self, body):
         self.__bodies.append(body)
@@ -135,7 +147,7 @@ class Universe:
             for j in range(i+1, len(self.__bodies)):
                 body1 = self.__bodies[i]
                 body2 = self.__bodies[j]
-                body1.add_force(self.__compute_inter_force(body1, body2) * delta_time)
+                self.__body_velo.append(body1.add_force(self.__compute_inter_force(body1, body2) * delta_time))
                 body2.add_force(self.__compute_inter_force(body2, body1) * delta_time)
         for i in self.__bodies:
             i.update_pos(delta_time)
@@ -149,7 +161,7 @@ class Universe:
         ret = direction.normalize() * (self.__g * mass1 * mass2 / distance ** 2)
         last = self.__g * mass1 * mass2 / distance ** 2
         dist = body1.get_pos().distance(body2.get_pos())
-        print(ret, direction, dist, norm, last)
+        #print(ret, direction, dist, norm, last)
         return ret
 
     def __iter__(self):
@@ -264,3 +276,6 @@ class Universe:
 
     def get_bodies(self):
         return len(self.__bodies)
+
+    def get_body_velocity(self):
+        return self.__body_velo
