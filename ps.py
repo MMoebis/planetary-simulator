@@ -8,6 +8,9 @@ import sys
 
 class Animation:
     def __init__(self, master, delta_time, g):
+
+        # allgemeine Variablen
+
         self.__max_x = 0
         self.__max_y = 0
 
@@ -32,11 +35,9 @@ class Animation:
         self.__speed = 0
 
         self.__lines = []
+        self.__dots = []
 
-        #self.__canvas_pos_x_scroll_region = self.__max_x
-        #self.__canvas_pos_y_scroll_region = self.__max_y
-        #self.__canvas_neg_x_scroll_region = -self.__max_x
-        #self.__canvas_neg_y_scroll_region = -self.__max_y
+        self.__legend_rows = 0
 
         self.__planet_names = []
         self.__x_coordinates = []
@@ -45,13 +46,17 @@ class Animation:
         self.__s_List = []
         self.__c_List = []
 
+        self.__legend_labels = []
+
         self.__delta_time = delta_time
         self.__g = g
         self.__master = master
         self.universe = Universe(self.__g)
 
+        # Animations-Widgets
+
         self.__canvas_frame = Frame(self.__master, height=600, width=800)
-        self.__canvas_frame.grid(row=0, rowspan=2, column=1, sticky="nsew", padx=0)
+        self.__canvas_frame.grid(row=0, rowspan=2, column=0, sticky="nsew", padx=0)
 
         self.__canvas = Canvas(self.__canvas_frame, height=569, width=680, bg='black',
                                scrollregion=(-100000, -100000, 100000, 100000))
@@ -70,8 +75,10 @@ class Animation:
         self.__canvas.config(yscrollcommand=self.__canvas_y_scroll.set, xscrollcommand=self.__canvas_x_scroll.set)
         self.__canvas.pack(side=LEFT, expand=True, fill=BOTH)
 
+        # Button-Leiste unterhalb des Animationscanvas
+
         self.__button_frame = Frame(self.__master, bg='black', width=800)
-        self.__button_frame.grid(row=2, column=1, padx=0)
+        self.__button_frame.grid(row=2, column=0, padx=0)
 
         self.__start_button = Button(self.__button_frame, text="Start", command=self.start_animation)
         self.__start_button.pack(side=LEFT)
@@ -85,7 +92,7 @@ class Animation:
         self.__neg_scale_button = Button(self.__button_frame, text="Zoom out", command=self.neg_item_scale)
         self.__neg_scale_button.pack(side=LEFT)
 
-        self.__del_mark_button = Button(self.__button_frame, text="Delete pointmark", command=self.delete_pointmark)
+        self.__del_mark_button = Button(self.__button_frame, text="Delete mark", command=self.delete_mark)
         self.__del_mark_button.pack(side=LEFT)
 
         self.__del_vectors_button = Button(self.__button_frame, text="Delete vector lines",
@@ -94,6 +101,8 @@ class Animation:
 
         self.__remove_all_button = Button(self.__button_frame, text="Remove all bodies", command=self.remove_all)
         self.__remove_all_button.pack(side=LEFT)
+
+        # Menubar des Programms
 
         self.__master.title("PS")
 
@@ -125,28 +134,29 @@ class Animation:
         self.__new.add_command(label="Universe...", command=self.define_universe)
         self.__new.add_command(label="Body...", command=self.add_body)
 
-        self.__canvas2 = Canvas(self.__master, width=200, height=765, bg='grey')
-        self.__canvas2.grid(row=0, column=0, rowspan=4, sticky="nsew", padx=0)
+        # Fenster mit Legende (Daten fuer Planeten usw.)
 
         self.__legend_frame = Frame(self.__master, width=300, height=300)
-        self.__legend_frame.grid(row=0, column=2, sticky="nsew", padx=0)
+        self.__legend_frame.grid(row=0, column=1, sticky="nsew", padx=0)
 
         self.legend_canvas = Canvas(self.__legend_frame)
 
         self.__planet_label = Label(self.__legend_frame, text="Name", font=('bold', 15))
-        self.__planet_label.grid(row=0, column=0, padx=16)
+        self.__planet_label.grid(row=0, column=0, padx=16, sticky="nsew")
 
         self.__m_label = Label(self.__legend_frame, text="Mass (kg)", font=('bold', 15))
-        self.__m_label.grid(row=0, column=1, padx=16)
+        self.__m_label.grid(row=0, column=1, padx=16, sticky="nsew")
 
         self.__r_label = Label(self.__legend_frame, text="Radius (m)", font=('bold', 15))
-        self.__r_label.grid(row=0, column=2, padx=16)
+        self.__r_label.grid(row=0, column=2, padx=16, sticky="nsew")
 
         self.__color_label = Label(self.__legend_frame, text="Color", font=('bold', 15))
-        self.__color_label.grid(row=0, column=3, padx=16)
+        self.__color_label.grid(row=0, column=3, padx=16, sticky="nsew")
+
+        # Diagramm
 
         self.__diagram_frame = Frame(self.__master, height=300, width=300)
-        self.__diagram_frame.grid(row=1, column=2, sticky="nsew", padx=0)
+        self.__diagram_frame.grid(row=1, column=1, sticky="nsew", padx=0)
 
         self.__canvas4 = Canvas(self.__diagram_frame, height=50, width=300, bg='#D8D8D8',
                                 scrollregion=(-10000, -1000, 10000, 1000))
@@ -165,8 +175,10 @@ class Animation:
 
         self.__canvas4.create_line(-10000, 150, 10000, 150, fill='black')
 
+        # Textfeld zur Bestaetigungsausgabe
+
         self.__text_frame = Frame(self.__master, height=10, width=138)
-        self.__text_frame.grid(column=1, row=3, columnspan=3, sticky="nsew", padx=0)
+        self.__text_frame.grid(column=0, row=3, columnspan=3, sticky="nsew", padx=0)
 
         self.__text_y_scroll = Scrollbar(self.__text_frame)
         self.__text_y_scroll.pack(side=RIGHT, fill=Y)
@@ -179,20 +191,32 @@ class Animation:
 
         self.__text_y_scroll.config(command=self.__textfield.yview)
 
+        # Mouse commands
+
         self.__canvas.bind('<ButtonPress-3>', self.get_mouse_coordinates)
         self.__canvas.bind('<B3-Motion>', self.canvas_drag)
         self.__canvas.bind('<Button-1>', self.mark_coordinate)
         self.__canvas.bind('<Button-2>', self.options)
 
+        # Gewichtung der Widgets beim skalieren de gesamten Fensters
+
         self.__master.grid_rowconfigure(0, weight=2)
         self.__master.grid_rowconfigure(1, weight=2)
         self.__master.grid_rowconfigure(2, weight=1)
-        self.__master.grid_columnconfigure(1, weight=10)
+        self.__master.grid_columnconfigure(0, weight=150)
+        self.__master.grid_columnconfigure(1, weight=40)
         self.__master.grid_columnconfigure(2, weight=1)
+
+        self.__legend_frame.grid_columnconfigure(0, weight=1)
+        self.__legend_frame.grid_columnconfigure(1, weight=1)
+        self.__legend_frame.grid_columnconfigure(2, weight=1)
+        self.__legend_frame.grid_columnconfigure(3, weight=1)
 
         self.__callback = True
 
         #self.test()
+
+    # Funktion mit initialisierten Koerpern fuer Testzwecke
 
     def test(self):
         self.universe.add_body(Planet(1e18, Vector2(250, 250), "t1", 10, self.__scale, self.__canvas, 'orange'))
@@ -205,6 +229,8 @@ class Animation:
         self.universe.add_body(Planet(1e18, Vector2(250, 750), "t8", 10, self.__scale, self.__canvas, 'lightgreen'))
         self.universe[0].add_force(Vector2(0, 20))
         self.universe[1].add_force(Vector2(0, -30))
+
+    # Update Funktion zum updaten der Positionen der Körper und deren Veranschaulichung auf dem Canvas
 
     def update(self):
         while self.__callback == True:
@@ -222,19 +248,17 @@ class Animation:
                 last_pos_y = j.get_last_pos().get_y()
                 pos_x = j.get_pos().get_x()
                 pos_y = j.get_pos().get_y()
-                print(self.__last_speed)
-                velocity = self.universe.get_body_velocity()
-                for k in range(len(velocity)):
-                    velo = velocity[k]
-                    self.__speed = velo * self.__delta_time
-                    self.__canvas4.create_line(self.__last_delta_time_factor + 150, self.__last_speed + 150,
-                                               self.__delta_time_factor + 150, self.__speed + 150, fill=j.get_color())
-                    self.__last_speed = self.__speed
+                # velocity = self.universe.get_body_velocity()
+                #for k in range(len(velocity)):
+                #    velo = velocity[k]
+                #    self.__speed = velo * self.__delta_time
+                #    self.__canvas4.create_line(self.__last_delta_time_factor + 150, self.__last_speed + 150,
+                #                               self.__delta_time_factor + 150, self.__speed + 150, fill=j.get_color())
+                #    self.__last_speed = self.__speed
                 self.__canvas.create_line(last_pos_x, last_pos_y, pos_x, pos_y, fill=j.get_color())
             time.sleep(self.__delta_time)
             self.__last_delta_time_factor += self.__delta_time
             self.animation_collision()
-            #self.diagram_animation()
 
     def get_last_delta_time_factor(self):
         return self.__last_delta_time_factor
@@ -247,6 +271,8 @@ class Animation:
 
     def set_delta_time_factor(self, d_t_factor):
         self.__delta_time_factor = d_t_factor
+
+    # Funktion zur Berechnung einer Kollision zwischen zwei Koerpern
 
     def animation_collision(self):
         collision = self.universe.collision()
@@ -269,6 +295,9 @@ class Animation:
                 collision[3].add_force(F2)
                 print(F1, F2)
 
+    # Die Region in die gescrollt werden kann wird geupdatet (leider nur theoretisch möglich, da tkinter zur
+    # Ausfuehrung diese Algorithmus zu langsam ist und das Programm abstuerzen wuerde
+
     def update_canvas_scrollregion(self):
         transitional = self.universe.maximum_coordinates()
 
@@ -286,6 +315,8 @@ class Animation:
         print(self.__max_x)
 
         self.__canvas.config(scrollregion=(-self.__max_x, -self.__max_y, self.__max_x, self.__max_y))
+
+    # Funktionen fuer die Canvas Befehle zoom in, zoom out und drag sowie das Setzen einer Markierung
 
     def get_mouse_coordinates(self, event):
         self.__canvas.scan_mark(event.x, event.y)
@@ -329,16 +360,7 @@ class Animation:
 
         self.__textfield.insert(END, "X: " + str(event.x) + " Y: " + str(event.y) + "\n")
 
-    def diagram_animation(self):
-        self.__delta_time_factor = self.__delta_time * self.__delta_time_frac
-        for i in self.universe:
-            velocity = i.get_velocity()
-            if velocity < 0:
-                velocity *= -1
-            self.__canvas4.create_line(self.__last_delta_time_factor, self.__last_velo, self.__delta_time_factor,
-                                       velocity, fill='red')
-
-    def delete_pointmark(self):
+    def delete_mark(self):
         self.__canvas.delete(self.__mark_line0, self.__mark_line1, self.__mark_line2, self.__mark_line3)
         self.__point_mark = False
 
@@ -367,6 +389,8 @@ class Animation:
             self.e10.insert(0, self.__point_mark_x)
             self.e11.insert(0, self.__point_mark_y)
 
+    # Zusaetzliches Fenster zum anheften eines Vektors an einen Koerper
+
     def add_vector_submit(self):
         name = self.e9.get()
         x = int(self.e10.get())
@@ -380,24 +404,42 @@ class Animation:
                 line = self.__canvas.create_line(x_vector, y_vector, x, y, fill='white')
                 oval = self.__canvas.create_oval(x-5, y-5, x+5, y+5, fill='white')
                 self.__lines.append(line)
-                self.__lines.append(oval)
+                self.__dots.append(oval)
                 self.__textfield.insert(END, "The vector " + str(x-x_vector) + "," + str(y-y_vector)
                                         + " has been attached on the body " + name + "\n")
         self.master3.destroy()
+
+    # Linien, die beim anheften aines Vektors gezogen werden, koennen unsichtbar gemacht werden
 
     def delete_vector_lines(self):
         for i in self.__lines:
             self.__lines.remove(i)
             self.__canvas.delete(i)
+        for j in self.__dots:
+            self.__dots.remove(j)
+            self.__canvas.delete(j)
+
+    # Alle Koerper werden aus dem Universum entfernt
 
     def remove_all(self):
         self.__canvas.delete("all")
         self.universe = Universe(self.__g)
         self.__textfield.insert(END, "All bodies were removed from the universe! \n")
+        for l in range(len(self.__s_List)):
+            self.__s_List.remove(self.__s_List[l])
+            self.__m_List.remove(self.__m_List[l])
+            self.__c_List.remove(self.__c_List[l])
+            self.__x_coordinates.remove(self.__x_coordinates[l])
+            self.__y_coordinates.remove(self.__y_coordinates[l])
+            self.__planet_names.remove(self.__planet_names[l])
+
+    # Optionen beim rechtsklicken im Canvas
 
     def options(self, event):
         if self.__point_mark == True:
             self.__popup.post(self.__point_mark_x, self.__point_mark_y)
+
+    # Funktionen zum starten, stoppen und resetten der Animation
 
     def start_animation(self):
         self.__callback = True
@@ -429,9 +471,6 @@ class Animation:
                                           self.__canvas, self.rC))
         self.__textfield.insert(END, "Animation has been resettet! \n")
 
-    def submit(self):
-        print("submit")
-
     def exit(self):
         sys.exit(0)
 
@@ -448,7 +487,7 @@ class Animation:
         self.master1.title("define a universe")
         self.e1 = Entry(self.master1)
         self.e2 = Entry(self.master1)
-        self.submit1 = Button(self.master1, text="Submit", command=self.submit)
+        self.submit1 = Button(self.master1, text="Submit")
 
         self.l1 = Label(self.master1, text="Name")
         self.l2 = Label(self.master1, text="G \n(gravitational constant)")
@@ -462,6 +501,8 @@ class Animation:
     def edit_body_color(self):
         color = self.edit_bg_color()
         self.e8.insert(0, color)
+
+    # Koerper hinzufuegen
 
     def add_body(self):
         self.master2 = Tk()
@@ -537,17 +578,17 @@ class Animation:
         self.__coordinate_count += 1
 
         for p in range(len(self.__planet_names)):
-            Label(self.__legend_frame, text=self.__planet_names[p]).grid(row=row, column=column)
+            l1 = Label(self.__legend_frame, text=self.__planet_names[p]).grid(row=row, column=column)
             column += 1
-            Label(self.__legend_frame, text=self.__m_List[p]).grid(row=row, column=column)
+            l2 = Label(self.__legend_frame, text=self.__m_List[p]).grid(row=row, column=column)
             column += 1
-            Label(self.__legend_frame, text=self.__s_List[p]).grid(row=row, column=column)
+            l3 = Label(self.__legend_frame, text=self.__s_List[p]).grid(row=row, column=column)
+            self.__legend_labels.append(l1)
+            self.__legend_labels.append(l2)
+            self.__legend_labels.append(l3)
             column = 0
             row += 1
-            #Label(self.__legend_frame, text=self.__)
-
-        #self.universe[0].add_force(Vector2(0, 20))
-        #self.universe[1].add_force(Vector2(0, -30))
+            self.__legend_rows += 1
 
         self.__textfield.insert(END, "The body " + "'" + self.N + "'" + " was successfully added to the Universe! \n")
 

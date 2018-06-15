@@ -2,6 +2,8 @@ from math import sqrt
 from tkinter import *
 import time
 
+# Klasse fuer Vektoren (Der Name "Vector2" wurde gewaehlt, da es bereits eine Klasse Vector in tkinter gibt)
+
 
 class Vector2:
     def __init__(self, x, y):
@@ -26,6 +28,8 @@ class Vector2:
     def __truediv__(self, other):
         return Vector2(self.__x / other, self.__y / other)
 
+    # Distanz zweier Planeten wird berechnet
+
     def distance(self, other):
         a = self.__x - other.__x
         b = self.__y - other.__y
@@ -34,6 +38,8 @@ class Vector2:
     def normalize(self):
         d = self.magnitude()
         return Vector2(self.__x / d, self.__y / d)
+
+    # Umwandlung eines Positionsvektors in einen Richtungsvektor
 
     def magnitude(self):
         return sqrt(self.__x ** 2 + self.__y ** 2)
@@ -58,11 +64,10 @@ class Body:
     def get_name(self):
         return self.__name
 
+    # Kraft wirkt aus einer best. Richtung auf den Koerper
+
     def add_force(self, force):
         self.__velocity += force / self.__m
-
-    def remove_force(self, force):
-        self.__velocity -= force / self.__m
 
     def get_pos(self):
         return self.__pos
@@ -137,17 +142,19 @@ class Universe:
         self.__g = g
         self.__current = 0
         self.__ret_list = []
-        self.__body_velo = []
+        self.__body_velocity = []
 
     def add_body(self, body):
         self.__bodies.append(body)
+
+    # physikalische Interaktion zweier Koerper wird berechnet
 
     def compute_physics(self, delta_time):
         for i in range(len(self.__bodies)):
             for j in range(i+1, len(self.__bodies)):
                 body1 = self.__bodies[i]
                 body2 = self.__bodies[j]
-                self.__body_velo.append(body1.add_force(self.__compute_inter_force(body1, body2) * delta_time))
+                body1.add_force(self.__compute_inter_force(body1, body2) * delta_time)
                 body2.add_force(self.__compute_inter_force(body2, body1) * delta_time)
         for i in self.__bodies:
             i.update_pos(delta_time)
@@ -157,10 +164,10 @@ class Universe:
         mass2 = body2.get_mass()
         distance = body1.get_pos().distance(body2.get_pos())
         direction = body2.get_pos() - body1.get_pos()
-        norm = direction.normalize()
+        #norm = direction.normalize()
         ret = direction.normalize() * (self.__g * mass1 * mass2 / distance ** 2)
-        last = self.__g * mass1 * mass2 / distance ** 2
-        dist = body1.get_pos().distance(body2.get_pos())
+        #last = self.__g * mass1 * mass2 / distance ** 2
+        #dist = body1.get_pos().distance(body2.get_pos())
         #print(ret, direction, dist, norm, last)
         return ret
 
@@ -276,6 +283,3 @@ class Universe:
 
     def get_bodies(self):
         return len(self.__bodies)
-
-    def get_body_velocity(self):
-        return self.__body_velo
